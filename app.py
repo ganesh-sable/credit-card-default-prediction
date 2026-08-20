@@ -2,10 +2,120 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import os
+import hashlib
 import joblib
 
-def home():
-    pass
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def Register():
+
+    st.title("📝 Create Account")
+
+    name = st.text_input("Enter your name:")
+
+    password = st.text_input(
+        "Create password:",
+        type="password"
+    )
+
+    confirm_password = st.text_input(
+        "Confirm password:",
+        type="password"
+    )
+
+    if st.button("Create Account", use_container_width=True):
+
+        if not name or not password:
+
+            st.warning("Please enter name and password.")
+
+        elif password != confirm_password:
+
+            st.error("Passwords do not match.")
+
+        else:
+
+            st.session_state.username = name
+            st.session_state.password_hash = hash_password(password)
+            st.session_state.account_created = True
+
+            st.success("Account created successfully!")
+            st.info("Now go to Login.")
+
+
+def Login():
+
+    st.title("🔐 CreditGuard AI")
+
+    st.subheader("Login")
+
+    name = st.text_input("Enter your name:")
+
+    password = st.text_input(
+        "Enter your password:",
+        type="password"
+    )
+
+    if st.button("Login", use_container_width=True):
+
+        if "account_created" not in st.session_state:
+
+            st.error("Please create an account first.")
+
+        elif not st.session_state.account_created:
+
+            st.error("Please create an account first.")
+
+        else:
+
+            entered_password_hash = hash_password(password)
+
+            if (
+                name == st.session_state.username
+                and entered_password_hash ==
+                st.session_state.password_hash
+            ):
+
+                st.session_state.logged_in = True
+
+                st.success("Login successful!")
+
+                st.rerun()
+
+            else:
+
+                st.error("Invalid name or password.")
+
+
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "account_created" not in st.session_state:
+    st.session_state.account_created = False
+
+
+
+
+def Home():
+
+    st.title("🏦 CreditGuard AI")
+
+    st.subheader(
+        "AI-Powered Credit Card Default Risk Prediction System"
+    )
+
+    st.write(
+        """
+        CreditGuard AI is a machine learning based system
+        that predicts the probability of credit card default
+        and helps identify high-risk customers.
+        """
+    )
+
+
 
 def Prediction():
     
@@ -153,10 +263,6 @@ def Prediction():
         st.write(f"Default: {probability[1] * 100:.2f}%")
 
 
-# ------------------------------------------------
-# SAVE SECTION
-# ------------------------------------------------
-
     if st.session_state.prediction is not None:
 
         st.subheader("Save Customer Data")
@@ -213,7 +319,7 @@ def Prediction():
                         f"{file_name} created successfully!"
                     )   
 
-def analysis():
+def Analysis():
 
     st.title("📊 Credit Card Default Analysis")
 
@@ -338,6 +444,20 @@ def analysis():
         use_container_width=True
     )
 
-pg = st.navigation([home, Prediction, analysis])
+if not st.session_state.logged_in:
+
+    pg = st.navigation([
+        st.Page(Register, title="Register", icon="📝"),
+        st.Page(Login, title="Login", icon="🔐")
+    ])
+
+else:
+
+    pg = st.navigation([
+        st.Page(Home, title="Home", icon="🏠"),
+        st.Page(Prediction, title="Prediction", icon="🔮"),
+        st.Page(Analysis, title="Analysis", icon="📊")
+    ])
+
 pg.run()
 
